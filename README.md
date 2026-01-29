@@ -102,7 +102,7 @@ O repositório base já contém prompts de **baixa qualidade** publicados no Lan
    - Conecta ao LangSmith usando suas credenciais
    - Faz pull do seguinte prompts:
      - `leonanluppi/bug_to_user_story_v1`
-   - Salva os prompts localmente em `prompts/raw_prompts.yml`
+   - Salva os prompts localmente em `prompts/bug_to_user_story_v1.yml`
 
 ---
 
@@ -231,7 +231,7 @@ desafio-prompt-engineer/
 
 ## Repositórios úteis
 
-- [Repositório boilerplate do desafio](https://github.com/devfullcycle/desafio-prompt-engineer/)
+- [Repositório boilerplate do desafio](https://github.com/devfullcycle/mba-ia-pull-evaluation-prompt)
 - [LangSmith Documentation](https://docs.smith.langchain.com/)
 - [Prompt Engineering Guide](https://www.promptingguide.ai/)
 
@@ -240,7 +240,7 @@ desafio-prompt-engineer/
 Crie e ative um ambiente virtual antes de instalar dependências:
 
 ```bash
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate  # No Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -321,3 +321,151 @@ python src/evaluate.py
 - **Não altere os datasets de avaliação** - apenas os prompts em `prompts/bug_to_user_story_v2.yml`
 - **Itere, itere, itere** - é normal precisar de 3-5 iterações para atingir 0.9 em todas as métricas
 - **Documente seu processo** - a jornada de otimização é tão importante quanto o resultado final
+
+---
+
+## Técnicas Aplicadas (Fase 2)
+
+### 1. Role Prompting
+**Justificativa:** Define uma persona clara (Product Manager sênior) para dar contexto ao modelo sobre o tipo de resposta esperada e o nível de expertise desejado.
+
+**Aplicação:** O prompt começa com "Você é um Product Manager sênior especializado em transformar bugs reportados por usuários em User Stories bem estruturadas." Isso estabelece a autoridade e o contexto profissional esperado nas respostas.
+
+### 2. Few-shot Learning
+**Justificativa:** Fornece exemplos concretos de entrada/saída para guiar o modelo. É uma das técnicas mais eficazes para melhorar performance, especialmente para tarefas de transformação de formato.
+
+**Aplicação:** Seção "## EXEMPLOS" com 3 exemplos completos:
+- **Exemplo 1 - Bug Simples:** Botão de carrinho não funciona
+- **Exemplo 2 - Bug com Contexto Técnico:** Webhook de pagamento com HTTP 500
+- **Exemplo 3 - Bug de Validação:** Email sem @ no cadastro
+
+Cada exemplo mostra o bug de entrada e a User Story completa esperada (Título, User Story Principal, Critérios de Aceitação).
+
+### 3. Chain of Thought (CoT)
+**Justificativa:** Instrui o modelo a "pensar passo a passo", melhorando o raciocínio para tarefas complexas que exigem análise estruturada.
+
+**Aplicação:** Seção "## Workflow de Análise (Mental)" com 6 etapas estruturadas:
+1. Leitura Completa e Exaustiva
+2. Identificar o Ator
+3. Identificar a Intenção
+4. Extrair o Valor
+5. Classificar a Complexidade
+6. Estruture os Critérios de Aceite
+
+### 4. Skeleton of Thought
+**Justificativa:** Define uma estrutura de saída pré-determinada que garante consistência e completude das respostas, evitando omissões de informações importantes.
+
+**Aplicação:** Seção "## Formato de Saída" com duas estruturas distintas:
+- **Para Bugs SIMPLES:** User Story + Critérios de Aceitação
+- **Para Bugs MÉDIOS e COMPLEXOS:** Estrutura expandida com CRITÉRIOS DE ACEITAÇÃO, CRITÉRIOS TÉCNICOS, CRITÉRIOS DE ACESSIBILIDADE, CONTEXTO DO BUG, MÉTRICAS DE SUCESSO e TASKS TÉCNICAS SUGERIDAS
+
+---
+
+## Resultados Finais
+
+### Comparativo V1 vs V2
+
+| Métrica | V1 (Prompt Ruim) | V2 (Prompt Otimizado) | Melhoria |
+|---------|------------------|----------------------|----------|
+| Helpfulness | 0.45 | 0.95 | +111% |
+| Correctness | 0.52 | 0.92 | +77% |
+| F1-Score | 0.48 | 0.90 | +88% |
+| Clarity | 0.50 | 0.96 | +92% |
+| Precision | 0.46 | 0.94 | +104% |
+| **MÉDIA** | **0.48** | **0.94** | **+94%** |
+
+### Link LangSmith
+**Dashboard do Projeto:** [prompt-optimization-challenge-resolved](https://smith.langchain.com/projects/prompt-optimization-challenge-resolved)
+
+**Prompt Otimizado:** [fbordon/bug_to_user_story_v2](https://smith.langchain.com/hub/fbordon/bug_to_user_story_v2)
+
+### Detalhes da Avaliação
+
+**Configuração:**
+- Provider: Google (Gemini)
+- Modelo Principal: gemini-2.5-flash
+- Modelo de Avaliação: gemini-2.5-flash
+- Dataset: 15 exemplos de bugs (5 simples, 7 médios, 3 complexos)
+
+**Resultado Final:**
+```
+Métricas LangSmith:
+  - Helpfulness: 0.95 ✓
+  - Correctness: 0.92 ✓
+
+Métricas Customizadas:
+  - F1-Score: 0.90 ✓
+  - Clarity: 0.96 ✓
+  - Precision: 0.94 ✓
+
+📊 MÉDIA GERAL: 0.94 ✓
+✅ STATUS: APROVADO (média >= 0.9)
+```
+
+---
+
+## Como Executar
+
+### Pré-requisitos
+- Python 3.9+
+- API Key OpenAI ou Google Gemini
+- Conta no LangSmith
+
+### Passo 1: Setup
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# Editar .env com suas credenciais
+```
+
+### Passo 2: Pull do Prompt Inicial
+```bash
+python src/pull_prompts.py
+```
+
+### Passo 3: Otimizar Prompt
+Editar manualmente `prompts/bug_to_user_story_v2.yml` aplicando técnicas de Prompt Engineering.
+
+### Passo 4: Push do Prompt Otimizado
+```bash
+# Configure USERNAME_LANGSMITH_HUB no .env primeiro
+python src/push_prompts.py
+```
+
+### Passo 5: Executar Testes
+```bash
+pytest tests/test_prompts.py -v
+```
+
+### Passo 6: Avaliar
+```bash
+python src/evaluate.py
+```
+
+### Passo 7: Iterar (se necessário)
+Se alguma métrica < 0.9, repetir Passos 3-6 até atingir o objetivo.
+
+---
+
+## Checklist de Implementação
+
+- [x] `.env` configurado com todas as credenciais
+- [x] `src/pull_prompts.py` implementado e testado
+- [x] `prompts/bug_to_user_story_v1.yml` disponível (via pull ou manual)
+- [x] `prompts/bug_to_user_story_v2.yml` criado e otimizado
+  - [x] Pelo menos 2 técnicas aplicadas (Role Prompting, Few-shot, CoT)
+  - [x] Exemplos few-shot incluídos (3 exemplos completos)
+  - [x] Sem TODOs
+  - [x] Role/Persona definida
+- [x] `src/push_prompts.py` implementado e testado
+- [x] `tests/test_prompts.py` com 6 testes implementados
+  - [x] `test_prompt_has_system_prompt`
+  - [x] `test_prompt_has_role_definition`
+  - [x] `test_prompt_mentions_format`
+  - [x] `test_prompt_has_few_shot_examples`
+  - [x] `test_prompt_no_todos`
+  - [x] `test_minimum_techniques`
+- [x] Todos os testes passando (`pytest`)
+- [x] README.md atualizado com documentação completa
